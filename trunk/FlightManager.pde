@@ -36,10 +36,13 @@ class FlightManager{
   ArrayList dateList;
   int minDate = 0;
   int maxDate = 0;
+  int totalDays;
   
   color departingColor = color( 0, 255, 0 );
   color arrivingColor = color( 255, 0, 0 );
   int transparency = 75;
+  
+  ArrayList activeFlights; // List of selected flights
   
   FlightManager(){
     FLIGHTS = new Hashtable();
@@ -48,6 +51,7 @@ class FlightManager{
     dateList = new ArrayList();
     
     ArrayList fileNames = new ArrayList();
+    activeFlights = new ArrayList();
     
     // Regular expression usd to parse file
     p = Pattern.compile("<Flight\\sId=\"([\\d]+)\"\\sFlight=\"([\\w\\d\\s\\w\\d]+)\"\\sAirline=\"(.*)\"\\sLatitude=\"(\\-?\\d+\\.\\d+)\"\\sLongitude=\"(\\-?\\d+\\.\\d+)\"\\sBearing=\"(\\d+)\"\\sIsDep=\"(\\d+)\"\\s");
@@ -80,6 +84,7 @@ class FlightManager{
     println("Done loading files. Time elapsed: "+(( millis() - startTime ) / 1000)+" seconds.");
     fillAirlineList();
     
+    totalDays = maxDate;
     loaded = true;
   }// CTOR
   
@@ -239,7 +244,7 @@ class FlightManager{
   
   void drawFlightPath(){
     Enumeration e = FLIGHTS.elements();
-    
+    println(minDate+" "+maxDate);
     while( e.hasMoreElements() ){
      
       Flight tempFlight = (Flight)e.nextElement();
@@ -293,6 +298,95 @@ class FlightManager{
       maxDate = maxD;
     }
   }// setDate
+  
+  ArrayList getFlights(){
+    return activeFlights;
+  }// getFlights
+  
+  void clearActiveFlights(){
+    activeFlights.clear();
+  }// clearActiveFlights
+  
+  void addDayOne(){
+    Enumeration e = FLIGHTS.elements();
+    
+    while( e.hasMoreElements() ){
+      Flight tempFlight = (Flight)e.nextElement();
+      activeFlights.addAll( tempFlight.getDayOne() );
+      
+    }// while
+    
+  }// addDayOne
+  
+  void addDayTwo(){
+    Enumeration e = FLIGHTS.elements();
+    
+    while( e.hasMoreElements() ){
+      Flight tempFlight = (Flight)e.nextElement();
+      activeFlights.addAll( tempFlight.getDayOne() );
+      
+    }// while
+  }// addDayX
+  
+  void addDayThree(){
+    Enumeration e = FLIGHTS.elements();
+    
+    while( e.hasMoreElements() ){
+      Flight tempFlight = (Flight)e.nextElement();
+      activeFlights.addAll( tempFlight.getDayThree() );
+      
+    }// while
+  }// addDayX
+  
+  void addDayFour(){
+    Enumeration e = FLIGHTS.elements();
+    
+    while( e.hasMoreElements() ){
+      Flight tempFlight = (Flight)e.nextElement();
+      activeFlights.addAll( tempFlight.getDayFour() );
+      
+    }// while
+  }// addDayX
+  
+  void addDayFive(){
+    Enumeration e = FLIGHTS.elements();
+    
+    while( e.hasMoreElements() ){
+      Flight tempFlight = (Flight)e.nextElement();
+      activeFlights.addAll( tempFlight.getDayFive() );
+      
+    }// while
+  }// addDayX
+  
+  void addDaySix(){
+    Enumeration e = FLIGHTS.elements();
+    
+    while( e.hasMoreElements() ){
+      Flight tempFlight = (Flight)e.nextElement();
+      activeFlights.addAll( tempFlight.getDaySix() );
+      
+    }// while
+  }// addDayX
+  
+  void addDaySeven(){
+    Enumeration e = FLIGHTS.elements();
+    
+    while( e.hasMoreElements() ){
+      Flight tempFlight = (Flight)e.nextElement();
+      activeFlights.addAll( tempFlight.getDaySeven() );
+      
+    }// while
+  }// addDayX
+  
+  void addDayEight(){
+    Enumeration e = FLIGHTS.elements();
+    
+    while( e.hasMoreElements() ){
+      Flight tempFlight = (Flight)e.nextElement();
+      activeFlights.addAll( tempFlight.getDayEight() );
+      
+    }// while
+  }// addDayX
 }// FlightManager
 
 class Flight{
@@ -368,6 +462,38 @@ class Flight{
     }
     return out;
   }// getFlightpath
+  
+  ArrayList getDayOne(){
+    return getFlightPath(0, 284);
+  }// getDay1
+  
+  ArrayList getDayTwo(){
+    return getFlightPath(284, 570);
+  }// getDay2
+  
+  ArrayList getDayThree(){
+    return getFlightPath(570,854);
+  }// getDay3
+  
+  ArrayList getDayFour(){
+    return getFlightPath(854,1139);
+  }// getDay4
+  
+  ArrayList getDayFive(){
+    return getFlightPath(1139,1417);
+  }// getDay5
+  
+  ArrayList getDaySix(){
+    return getFlightPath(1417,1703);
+  }// getDay6
+  
+  ArrayList getDaySeven(){
+    return getFlightPath(1703,1988);
+  }// getDay7
+  
+  ArrayList getDayEight(){
+    return getFlightPath(1988,flightPositions.size());
+  }// getDay8
   
   String getAirline(){
     if( airline != null )
