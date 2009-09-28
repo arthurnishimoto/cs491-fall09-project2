@@ -764,7 +764,11 @@ public class MTButton extends PApplet{
           public float getDiameter(){
             return diameter;
           }// getDiameter
-
+          
+          public String getButtonText(){
+            return buttonText;
+          }// getButtonText
+          
 	  public void fadeEnable(){
 	    fadeEnable = true;
 	  }// fadeEnable

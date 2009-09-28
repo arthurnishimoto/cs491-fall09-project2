@@ -32,6 +32,7 @@ class FlightManager{
   ArrayList airlineList;
   int selectedAirline = 0;
   int totalAirline = 0;
+  ArrayList selectedAirlines;
   
   ArrayList dateList;
   int minDate = 0;
@@ -49,6 +50,7 @@ class FlightManager{
     
     airlineList = new ArrayList();
     dateList = new ArrayList();
+    selectedAirlines = new ArrayList();
     
     ArrayList fileNames = new ArrayList();
     activeCoordinates = new ArrayList();
@@ -85,7 +87,6 @@ class FlightManager{
     fillAirlineList();
     
     totalDays = maxDate;
-    loaded = true;
   }// CTOR
   
   void fillAirlineList(){
@@ -245,23 +246,34 @@ class FlightManager{
   
   void drawFlightPath(){
     Enumeration e = FLIGHTS.elements();
-    println(minDate+" "+maxDate);
+    boolean currentPos;
     
       ArrayList tempCoords = activeCoordinates;
       for( int i = 0; i < tempCoords.size(); i++ ){
-
+        currentPos = false;
+        
         Coords c = (Coords)tempCoords.get(i); // Get coord from list
+        
+        if( maxDate == c.getTimestampID() )
+          currentPos = true;
+          
         Flight tempFlight = c.getFlight(); // Get the Flight coord belongs to
         Location l = c.getLocation();
         Point2f p = map.locationPoint( l );
 
-        if(tempFlight.getAirline().equals(airlineList.get(selectedAirline))){
+        //if(tempFlight.getAirline().equals(airlineList.get(selectedAirline))){
+        for( int j = 0; j < selectedAirlines.size(); j++ )
+        if( ( (String)selectedAirlines.get(j) ).contains(tempFlight.getAirline()) ){
           pushMatrix();
           translate( p.x, p.y );
           rotate( radians(c.getBearing() - 90) );
-            
+          
+          // Override colors determined by airline selector
+          arrivingColor = selectedAirlineColors[j];
+          departingColor = selectedAirlineColors[j];
+          
           if( !tempFlight.isDeparting() ){
-            if( i == tempCoords.size() - 1 ){
+            if( currentPos ){
               stroke(arrivingColor); // Green = arriving 
               fill(arrivingColor);
             } else {
@@ -272,7 +284,7 @@ class FlightManager{
             stroke(0,0,0);
             ellipse(0, 0, 10, 10);
           } else {
-            if( i == 0 ){
+            if( currentPos ){
               stroke(departingColor); // Red = departing
               fill(departingColor);
             } else {
@@ -394,6 +406,10 @@ class FlightManager{
 
     }// while
   }// addDayEight
+    
+  void setCurrentAirlines(ArrayList newList){
+    selectedAirlines = newList;
+  }// setCurrentAirline
   
 }// FlightManager
 
@@ -565,6 +581,7 @@ class Flight{
     else // Get source
       return (float[])flightPositions.get(0);
   }// getEndPositionNotOHare
+
 }// Flight
 
 class Coords{

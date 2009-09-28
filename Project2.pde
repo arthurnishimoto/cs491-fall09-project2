@@ -73,18 +73,37 @@ int newMaxDate;
 
 boolean firstRun = true;
 
+SlidePane airlineSelector;
+float paneHeight = 200;
+MTButton airlineSelector_button;
+
+PApplet parent;
+
 void setup() {
-  size(1280, 720,OPENGL);
+  parent = this;
+  
+  //size(1280, 720,OPENGL);
+  size(screen.width, screen.height,OPENGL);
   smooth();
   
   minDate = new MTScrollBar(this, 50, 80, 840, 20);
   maxDate = new MTScrollBar(this, 50, 120, 840, 20);
-
+  
   loaded = false;
   Runnable loader = new Runnable( ) {
     public void run( ) {
       FM = new FlightManager();
       maxDate.setCurrentPosition(1);
+      
+      airlineSelector = new SlidePane( width/2, height - paneHeight/2, width, paneHeight );
+      
+      airlineSelector_button = new MTButton(parent, width/2, height - 10, 20 , 100);
+      airlineSelector_button.setIdleColor(color(178,178,178));
+      airlineSelector_button.setButtonText(">");
+      airlineSelector_button.setRotation(radians(-90));
+      airlineSelector_button.setDoubleSidedText(false);
+      
+      loaded = true;
     }
   };
   Thread thread = new Thread( loader );
@@ -321,11 +340,16 @@ void draw() {
     minDate.draw();
     maxDate.draw();
     
-    if( mousePressed )
+    if( mousePressed ){
       if( minDate.isPressed(mouseX,mouseY) || maxDate.isPressed(mouseX,mouseY) ){
         disableSlider = false;
         FM.setDate( newMinDate , newMaxDate );
       }
+      
+      if( airlineSelector_button.isButtonHit(mouseX,mouseY) ){
+        airlineSelector.togglePane();
+      }
+    }// if mousePressed
     if( !disableSlider ){
     
     
@@ -386,7 +410,11 @@ void draw() {
     for( int i = 0; i < 8; i++ ){
       week[i].process();
     }// for week
-  
+    
+    airlineSelector.draw();
+    airlineSelector_button.process();
+    
+    
   }// if loaded
 
   week[0].setLit( day1 );
@@ -397,6 +425,8 @@ void draw() {
   week[5].setLit( day6 );
   week[6].setLit( day7 );
   week[7].setLit( day8 );
+  
+  
 }// draw
 
 boolean day1,day2,day3,day4,day5,day6,day7,day8;
@@ -498,8 +528,7 @@ void keyReleased() {
     map.tx = -128;
     map.ty = -128; 
   }
-  
-  if(loaded){
+
   if (key == '1') {
     if( MAP_STATE != ROAD )
       switchToRoadMap();
@@ -512,7 +541,10 @@ void keyReleased() {
     if( MAP_STATE != HYBRID )
       switchToHybridMap();
   }
-  else if (key == '[') {
+  
+  if(loaded){
+    
+  if (key == '[') {
     if( FM.minDate > 0 && FM.maxDate <= FM.dateList.size() - 1 && FM.minDate < FM.maxDate)
       FM.minDate--;
     updated = millis();
@@ -536,8 +568,6 @@ void keyReleased() {
     updated = millis();
     firstTimeIn = true;
   }
-  
-  }// if loaded
   
   if (key == 'z' || key == 'Z') {
     
@@ -573,6 +603,11 @@ void keyReleased() {
   
   if( key == 'r' || key == 'R' )
     processingRender = !processingRender;
+    
+  if( key == 'a' || key == 'A' )
+    airlineSelector.togglePane();
+    
+  }// if loaded
 }// keyReleased
 
 
