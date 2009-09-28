@@ -11,6 +11,8 @@ Day of week index for minDate/maxDate
 6/11 T = 1703
 6/12 F = 1988
 */
+PGraphics buffer;
+PImage img;
 
 class FlightManager{
   static final int LATITUDE = 0;
@@ -46,6 +48,8 @@ class FlightManager{
   ArrayList activeCoordinates; // List of selected coordinates
   
   FlightManager(){
+    buffer = createGraphics(width,height, OPENGL);
+    
     FLIGHTS = new Hashtable();
     
     airlineList = new ArrayList();
@@ -193,8 +197,12 @@ class FlightManager{
         //Point2f p = map.locationPoint( new Location((float)pos[0], (float)pos[1]) );
         //println(tempCoords.id + " " + tempCoords.flight + " " + tempCoords.airline + " " + tempCoords.lat + " " + tempCoords.lon + " " + tempCoords.bearing + " " + tempCoords.isDep);
         //161668415 works
-        for( int j = 0; j < selectedAirlines.size(); j++ )
-        if( ( (String)selectedAirlines.get(j) ).contains(tempFlight.getAirline()) ){
+        for( int j = 0; j < selectedAirlines.size(); j++ ){
+          MTButton airline = (MTButton)selectedAirlines.get(j);
+          String airlineName = airline.getButtonText();
+          color userColor = airline.lit_cl;
+          
+        if( airlineName.contains(tempFlight.getAirline()) ){
           vbuffer.put(p.x);
           vbuffer.put(p.y);
           
@@ -210,6 +218,7 @@ class FlightManager{
   
           //println("tempCoords.flight");
         }// if airline
+        }// for selected
       }// for tempCoords
     
     vbuffer.rewind();
@@ -263,15 +272,22 @@ class FlightManager{
         Point2f p = map.locationPoint( l );
 
         //if(tempFlight.getAirline().equals(airlineList.get(selectedAirline))){
-        for( int j = 0; j < selectedAirlines.size(); j++ )
-        if( ( (String)selectedAirlines.get(j) ).contains(tempFlight.getAirline()) ){
+        
+        for( int j = 0; j < selectedAirlines.size(); j++ ){
+          MTButton airline = (MTButton)selectedAirlines.get(j);
+          String airlineName = airline.getButtonText();
+          color userColor = airline.lit_cl;
+          
+        if( airlineName.contains(tempFlight.getAirline()) ){
+          
           pushMatrix();
           translate( p.x, p.y );
           rotate( radians(c.getBearing() - 90) );
           
+          for( int k = 0; k < airlineButtons.size(); k++ )
           // Override colors determined by airline selector
-          arrivingColor = selectedAirlineColors[j];
-          departingColor = selectedAirlineColors[j];
+          arrivingColor = userColor;
+          departingColor = userColor;
           
           if( !tempFlight.isDeparting() ){
             if( currentPos ){
@@ -299,8 +315,9 @@ class FlightManager{
           }
           popMatrix();
         }// if
+        }//for selectedAirlines
       }// for tempCoords
-    
+        
   }// drawFlightPath
   
   void setDate( int newMinDate , int newMaxDate ){
@@ -419,6 +436,8 @@ class Flight{
   String flightName, airline;
   boolean departing;
   
+  int firstTimestamp, lastTimestamp;
+  
   ArrayList flightPositions;
   // float[]:
   // [0] Latitude
@@ -430,6 +449,9 @@ class Flight{
     flightID = ID;
     flightName = name;
     airline = airlineName;
+    
+    firstTimestamp = timestampID;
+    lastTimestamp = timestampID;
     
     flightPositions = new ArrayList();
     addPosition(timestampID, timestamp, pos);
@@ -448,9 +470,20 @@ class Flight{
     return departing;
   }// isDeparting
   
+  boolean isFlightInTimeRange( int minVal, int maxVal ){
+    if( firstTimestamp >= minVal || lastTimestamp <= maxVal )
+      return true;
+    else
+      return false;
+  }// isFlightInTimeRange
+  
   void addPosition( int tsID, String timestamp, float[] pos ){
     flightPositions.add( new Coords( this, tsID, timestamp, new Location( pos[0], pos[1] ) , (int)pos[2] ) );
     
+    if( firstTimestamp > tsID )
+      firstTimestamp = tsID;
+    if( lastTimestamp < tsID )
+      lastTimestamp = tsID;
     //flightPositions.add( new Location( pos[0], pos[1] ) );
     //flightPositions.add( pos );
   }// addPosition
