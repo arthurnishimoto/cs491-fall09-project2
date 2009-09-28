@@ -74,7 +74,7 @@ int newMaxDate;
 boolean firstRun = true;
 
 SlidePane airlineSelector;
-float paneHeight = 200;
+float paneHeight = 350;
 MTButton airlineSelector_button;
 
 PApplet parent;
