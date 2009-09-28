@@ -1,13 +1,14 @@
 
 
 color[] selectedAirlineColors;
+ArrayList airlineButtons;
 
 class SlidePane{
   float xPos, yPos;
   float paneWidth, paneHeight;
   boolean showing = false;
   ArrayList activeAirlines;
-  ArrayList airlineButtons;
+  
   int nButtons = 71;
   
   ArrayList colorPallet;
@@ -90,32 +91,29 @@ class SlidePane{
   float pressDelay = 0;
   void draw(){
     timer = millis();
-    
-    String activeAirline = (String)FM.airlineList.get(FM.selectedAirline);
+
     for( int i = 0; i < airlineButtons.size(); i++ ){
       if( i >= nButtons )
         break;
       MTButton temp = ((MTButton)airlineButtons.get(i));
-      if( activeAirlines.contains( temp.getButtonText() ) )
+      if( activeAirlines.contains( temp ) )
         temp.setLit(true);
       else
         temp.setLit(false);
-        
+      
       if(mousePressed && millis() >= pressDelay){
-        println("activeAirlines "+activeAirlines);
         
         // If button is unselected - add to active list
         if( temp.isButtonHit(mouseX,mouseY) && !temp.isLit() ){
-          pressDelay = millis() + 100;
-          activeAirlines.add( temp.getButtonText() );
+          pressDelay = millis() + 500;
+          activeAirlines.add( temp );
           FM.setCurrentAirlines( activeAirlines );
           temp.setLitColor(colors[selectedColor]);
-          selectedAirlineColors[activeAirlines.size()-1] = colors[selectedColor];
         // If button is selected - remove from active list
         }else if( temp.isButtonHit(mouseX,mouseY) ){
-          pressDelay = millis() + 100;
+          pressDelay = millis() + 500;
           for( int j = 0; j < activeAirlines.size(); j++ ){
-            if( ((String)activeAirlines.get(j)).equals( temp.getButtonText() ) ){
+            if( ((MTButton)activeAirlines.get(j)).equals( temp ) ){
               activeAirlines.remove(j);
               break;
             }// if

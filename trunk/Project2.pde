@@ -326,12 +326,13 @@ void draw() {
   
       if(firstTimeIn){
         FM.fillBuffer();
+
         firstTimeIn = false;
       }
       
-      if( processingRender )
+      if( processingRender ){
         FM.drawFlightPath();
-      else
+      }else
         FM.drawBuffer();
       
       
