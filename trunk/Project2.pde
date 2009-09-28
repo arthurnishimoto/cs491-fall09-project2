@@ -68,6 +68,10 @@ boolean processingRender = false;
 MTScrollBar minDate, maxDate;
 MTButton[] week;
 
+int newMinDate;
+int newMaxDate;
+
+boolean firstRun = true;
 
 void setup() {
   size(1280, 720,OPENGL);
@@ -269,19 +273,19 @@ void draw() {
     
     fill(0);
     noStroke();
-    rw = textWidth("From: " + FM.dateList.get(FM.minDate));
+    rw = textWidth("From: " + FM.dateList.get(newMinDate));
     rect(0+50, 0+30-g.textSize, rw, g.textSize+textDescent());
     fill(255,255,0);
     textAlign(LEFT, BOTTOM);
-    text("From: " + FM.dateList.get(FM.minDate), 50, 30);
+    text("From: " + FM.dateList.get(newMinDate), 50, 30);
     
     fill(0);
     noStroke();
-    rw = textWidth("To: " + FM.dateList.get(FM.maxDate));
+    rw = textWidth("To: " + FM.dateList.get(newMaxDate));
     rect(0+50, 0+40-g.textSize, rw, g.textSize+textDescent());
     fill(255,255,0);
     textAlign(LEFT, BOTTOM);
-    text("To: " + FM.dateList.get(FM.maxDate), 50, 40);
+    text("To: " + FM.dateList.get(newMaxDate), 50, 40);
     }
     
     /*
@@ -318,23 +322,25 @@ void draw() {
     maxDate.draw();
     
     if( mousePressed )
-      if( minDate.isPressed(mouseX,mouseY) || maxDate.isPressed(mouseX,mouseY) )
+      if( minDate.isPressed(mouseX,mouseY) || maxDate.isPressed(mouseX,mouseY) ){
         disableSlider = false;
-    
+        FM.setDate( newMinDate , newMaxDate );
+      }
     if( !disableSlider ){
-      
+    
+    
     newMinDate = (int)( minDate.getCurrentPosition() * FM.totalDays );
     newMaxDate = (int)( maxDate.getCurrentPosition() * FM.totalDays );
-
-    if( newMinDate + 100 > newMaxDate && newMaxDate > 100){
-      newMinDate = newMaxDate - 100;
-      minDate.setCurrentPosition( (float)newMinDate/(float)FM.totalDays );
-    }
-    FM.minDate = newMinDate;
-    FM.maxDate = newMaxDate;
     
-    
+    // Only set new date if changed
+    if( FM.minDate != newMinDate || FM.maxDate != newMaxDate ){
+      if( newMinDate + 1 > newMaxDate && newMaxDate > 1 ){
+        newMinDate = newMaxDate - 1;
+        minDate.setCurrentPosition( (float)newMinDate/(float)FM.totalDays );
+      }
       
+    }
+    
     if( FM.maxDate >= 0 && FM.minDate < 284 )
       day1 = true;
     else
@@ -376,12 +382,13 @@ void draw() {
       day8 = false;
       
     }// if !disableSlider
+    // Draw day of week buttons
+    for( int i = 0; i < 8; i++ ){
+      week[i].process();
+    }// for week
+  
   }// if loaded
-  
-  for( int i = 0; i < 8; i++ ){
-    week[i].process();
-  }// for week
-  
+
   week[0].setLit( day1 );
   week[1].setLit( day2 );
   week[2].setLit( day3 );
@@ -391,6 +398,7 @@ void draw() {
   week[6].setLit( day7 );
   week[7].setLit( day8 );
 }// draw
+
 boolean day1,day2,day3,day4,day5,day6,day7,day8;
 boolean disableSlider = false;
 
@@ -402,105 +410,77 @@ void mousePressed(){
   if(!loaded)
     return;
   
+  boolean changed = false;
   if( week[0].isButtonHit(mouseX, mouseY) ){
     disableSlider = true;
-    if( !day1 ) {
-      day1 = true;
-    } else {
-      FM.clearActiveFlights();
-      day1 = false;
-    }
+    day1 = !day1;
+    changed = true;
   }
   if( week[1].isButtonHit(mouseX, mouseY) ){
     disableSlider = true;
-    if( !day2 ) {
-      day2 = true;
-    } else {
-      FM.clearActiveFlights();
-      day2 = false;
-    }
+    day2 = !day2;
+    changed = true;
   }
   if( week[2].isButtonHit(mouseX, mouseY) ){
     disableSlider = true;
-    if( !day3 ) {
-      day3 = true;
-    } else {
-      FM.clearActiveFlights();
-      day3 = false;
-    }
+    day3 = !day3;
+    changed = true;
   }
   if( week[3].isButtonHit(mouseX, mouseY) ){
     disableSlider = true;
-    if( !day4 ) {
-      day4 = true;
-    } else {
-      FM.clearActiveFlights();
-      day4 = false;
-    }
+    day4 = !day4;
+    changed = true;
   }
   if( week[4].isButtonHit(mouseX, mouseY) ){
     disableSlider = true;
-    if( !day5 ) {
-      day5 = true;
-    } else {
-      FM.clearActiveFlights();
-      day5 = false;
-    }
+    day5 = !day5;
+    changed = true;
   }
   if( week[5].isButtonHit(mouseX, mouseY) ){
     disableSlider = true;
-    if( !day6 ) {
-      day6 = true;
-    } else {
-      FM.clearActiveFlights();
-      day6 = false;
-    }
+    day6 = !day6;
+    changed = true;
   }
   if( week[6].isButtonHit(mouseX, mouseY) ){
     disableSlider = true;
-    if( !day7 ) {
-      day7 = true;
-    } else {
-      FM.clearActiveFlights();
-      day7 = false;
-    }
+    day7 = !day7;
+    changed = true;
   }
   if( week[7].isButtonHit(mouseX, mouseY) ){
     disableSlider = true;
-    if( !day8 ) {
-      day8 = true;
-    } else {
-      FM.clearActiveFlights();
-      day8 = false;
-    }
+    day8 = !day8;
+    changed = true;
   }
   
-  if( day1 )
-    FM.addDayOne();
-  if( day2 )
-    FM.addDayTwo();
-  if( day3 )
-    FM.addDayThree();
-  if( day4 )
-    FM.addDayFour();
-  if( day5 )
-    FM.addDayFive();
-  if( day6 )
-    FM.addDaySix();
-  if( day7 )
-    FM.addDaySeven();
-  if( day8 )
-    FM.addDayEight();
-  println(FM.activeFlights.size());
-}
+  // Only update active flight only if changed
+  if( changed || firstRun ){
+    firstRun = false;
+    FM.clearActiveCoordinates();
+    
+    if(day1)
+      FM.addDayOne();
+    if(day2)
+      FM.addDayTwo();
+    if(day3)
+      FM.addDayThree();
+    if(day4)
+      FM.addDayFour();
+    if(day5)
+      FM.addDayFive();
+    if(day6)
+      FM.addDaySix();
+    if(day7)
+      FM.addDaySeven();
+    if(day8)
+      FM.addDayEight();
+  }// if changed
 
-int newMinDate;
-int newMaxDate;
+}// mousePressed
 
 void mouseReleased(){
   if(!loaded)
     return;
-
+  
   updated = millis();
   firstTimeIn = true;
 }// mouseReleased
