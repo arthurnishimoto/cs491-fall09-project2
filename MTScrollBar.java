@@ -120,7 +120,7 @@ public class MTScrollBar extends PApplet{
         touchPos = (xCoord - xPos - 3*barHeight/2); // Relative to the lowest button pos
 
         // Prevents moving bar outside of up/down/scroll buttons
-        if( xCoord > buttonPosition && xCoord < buttonPosition + barHeight )
+        //if( xCoord > buttonPosition && xCoord < buttonPosition + barHeight )
           if( touchPos > 0 && touchPos/(barWidth - barHeight*3) <= 1.0 ){
             //println( (xCoord - xPos - 3*barHeight/2)+" "+(barWidth - barHeight*3) );
             currentPosition = touchPos/(barWidth - barHeight*3);
@@ -131,7 +131,7 @@ public class MTScrollBar extends PApplet{
         touchPos = (yCoord - yPos - 3*barWidth/2); // Relative to the lowest button pos
 
         // Prevents moving bar outside of up/down/scroll buttons
-        if( yCoord > buttonPosition && yCoord < buttonPosition + barWidth )
+        //if( yCoord > buttonPosition && yCoord < buttonPosition + barWidth )
           if( touchPos > 0 && touchPos/(barHeight - barWidth*3) <= 1.0 ){
             //println( touchPos+" "+(barHeight - barWidth*3) );
             currentPosition = touchPos/(barHeight - barWidth*3);

@@ -42,7 +42,7 @@ class FlightManager{
   color arrivingColor = color( 255, 0, 0 );
   int transparency = 75;
   
-  ArrayList activeFlights; // List of selected flights
+  ArrayList activeCoordinates; // List of selected coordinates
   
   FlightManager(){
     FLIGHTS = new Hashtable();
@@ -51,7 +51,7 @@ class FlightManager{
     dateList = new ArrayList();
     
     ArrayList fileNames = new ArrayList();
-    activeFlights = new ArrayList();
+    activeCoordinates = new ArrayList();
     
     // Regular expression usd to parse file
     p = Pattern.compile("<Flight\\sId=\"([\\d]+)\"\\sFlight=\"([\\w\\d\\s\\w\\d]+)\"\\sAirline=\"(.*)\"\\sLatitude=\"(\\-?\\d+\\.\\d+)\"\\sLongitude=\"(\\-?\\d+\\.\\d+)\"\\sBearing=\"(\\d+)\"\\sIsDep=\"(\\d+)\"\\s");
@@ -77,8 +77,8 @@ class FlightManager{
     // For each log files in directory, read and parse
     for( int i = 0; i < fileNames.size(); i++ ){
       currentFile = i+1;
-      readLog( (String)fileNames.get(i), datasetDirectory+"\\"+fileNames.get(i) );
-      println("Read file "+currentFile+"/"+maxFiles);
+      readLog( (String)fileNames.get(i), datasetDirectory+"\\"+fileNames.get(i), (String)dateList.get(i) );
+      println("Read file "+currentFile+"/"+maxFiles+" for date: "+dateList.get(i));
     }
     maxDate = fileNames.size() - 1;
     println("Done loading files. Time elapsed: "+(( millis() - startTime ) / 1000)+" seconds.");
@@ -116,12 +116,14 @@ class FlightManager{
     }
   }// fillAirlineList
   
-  void readLog(String path, String dataLine){
+  void readLog(String path, String dataLine, String logDate){
     String lines[] = loadStrings(dataLine);
+    int nCoordinates = 0;
     
-    // Read the path line (containing time and date) Format: 'ORD.06-07-2009-06-22.log'
-  
-
+    // Log date format: MM-DD-YYYY-HH-MM ( Month, day, year, hour, min )
+    //int dayNumber = Integer.valueOf( logDate.substring(3,5) );
+    //println( dayNumber );
+    
     // Read the dataline
     for(int i = 0 ; i < lines.length ; i++){
       
@@ -141,11 +143,13 @@ class FlightManager{
           int flightID = Integer.valueOf( m.group(1) );
           //println(flightID);
           // Adds flight to hashtable
-          if( !FLIGHTS.containsKey( flightID ) ) // If not a duplicate flight ID
-            FLIGHTS.put( flightID, new Flight(flightID,m.group(2),m.group(3),position,int(m.group(7)) ) );
-          else { // Append new position to existing flight
+          if( !FLIGHTS.containsKey( flightID ) ){ // If not a duplicate flight ID
+            FLIGHTS.put( flightID, new Flight(flightID,currentFile,logDate,m.group(2),m.group(3),position,int(m.group(7)) ) );
+            nCoordinates++;
+          } else { // Append new position to existing flight
             Flight existing = (Flight)FLIGHTS.get( flightID );
-            existing.addPosition( position );
+            existing.addPosition( currentFile, logDate, position );
+            nCoordinates++;
           } // else
           //println(m.group(1) + " " + m.group(2) + " " +m.group(3) + " " +float(m.group(4)) + " " +float(m.group(5)) + " " +int(m.group(6)) + " " +int(m.group(7)));
           //coordList.add(new coords(m.group(1),m.group(2),m.group(3),float(m.group(4)),float(m.group(5)),int(m.group(6)),int(m.group(7))));
@@ -153,8 +157,9 @@ class FlightManager{
       }// for
 
     }// for
-
-    numPoints = FLIGHTS.size();
+    
+    println(numPoints+" coordinates loaded");
+    numPoints += nCoordinates;
   }// readLog
   
   String getCurrentAirlineName(){
@@ -175,17 +180,15 @@ class FlightManager{
     cbuffer = BufferUtil.newFloatBuffer(numPoints * 3);   
     
     Enumeration e = FLIGHTS.elements();
-    
-    while( e.hasMoreElements() ){
-     
-      Flight tempFlight = (Flight)e.nextElement();
-      ArrayList tempCoords = tempFlight.getFlightPath(minDate,maxDate);
-      
+    ArrayList tempCoords = activeCoordinates;
+    //println("activeCoordinates size: "+activeCoordinates.size() );
       for( int i = 0; i < tempCoords.size(); i++ ){
-        //float[] pos = (float[])tempCoords.get(i);
-        Coords c = (Coords)tempCoords.get(i);
+
+        Coords c = (Coords)tempCoords.get(i); // Get coord from list
+        Flight tempFlight = c.getFlight(); // Get the Flight coord belongs to
         Location l = c.getLocation();
         Point2f p = map.locationPoint( l );
+
         //Point2f p = map.locationPoint( new Location((float)pos[0], (float)pos[1]) );
         //println(tempCoords.id + " " + tempCoords.flight + " " + tempCoords.airline + " " + tempCoords.lat + " " + tempCoords.lon + " " + tempCoords.bearing + " " + tempCoords.isDep);
         //161668415 works
@@ -204,10 +207,8 @@ class FlightManager{
           }
   
           //println("tempCoords.flight");
-        }
+        }// if airline
       }// for tempCoords
-      
-    }// while FLIGHTs
     
     vbuffer.rewind();
     cbuffer.rewind();
@@ -245,13 +246,12 @@ class FlightManager{
   void drawFlightPath(){
     Enumeration e = FLIGHTS.elements();
     println(minDate+" "+maxDate);
-    while( e.hasMoreElements() ){
-     
-      Flight tempFlight = (Flight)e.nextElement();
-      ArrayList tempCoords = tempFlight.getFlightPath(minDate,maxDate);
-      
+    
+      ArrayList tempCoords = activeCoordinates;
       for( int i = 0; i < tempCoords.size(); i++ ){
-        Coords c = (Coords)tempCoords.get(i);
+
+        Coords c = (Coords)tempCoords.get(i); // Get coord from list
+        Flight tempFlight = c.getFlight(); // Get the Flight coord belongs to
         Location l = c.getLocation();
         Point2f p = map.locationPoint( l );
 
@@ -287,106 +287,114 @@ class FlightManager{
           popMatrix();
         }// if
       }// for tempCoords
-      
-    }// while FLIGHTs
     
   }// drawFlightPath
   
-  void setDate(int minD, int maxD){
-    if( minD >= 0 && maxD <= dateList.size() - 1 && minD < maxD){
-      minDate = minD;
-      maxDate = maxD;
-    }
+  void setDate( int newMinDate , int newMaxDate ){
+    String minTimestamp = (String)dateList.get(newMinDate);
+    String maxTimestamp = (String)dateList.get(newMaxDate);
+    
+    println("setDate called for timestamps '"+minTimestamp+"' through '"+maxTimestamp+"'.");
+    minDate = newMinDate;
+    maxDate = newMaxDate;
+    
+    activeCoordinates.clear();
+    Enumeration e = FLIGHTS.elements();
+
+    while( e.hasMoreElements() ){
+      Flight tempFlight = (Flight)e.nextElement();
+      activeCoordinates.addAll( tempFlight.getCoords(minDate,maxDate) );
+
+    }// while
+    
   }// setDate
   
-  ArrayList getFlights(){
-    return activeFlights;
-  }// getFlights
-  
-  void clearActiveFlights(){
-    activeFlights.clear();
+  void clearActiveCoordinates(){
+    activeCoordinates.clear();
   }// clearActiveFlights
   
   void addDayOne(){
     Enumeration e = FLIGHTS.elements();
-    
+
     while( e.hasMoreElements() ){
       Flight tempFlight = (Flight)e.nextElement();
-      activeFlights.addAll( tempFlight.getDayOne() );
-      
+      activeCoordinates.addAll( tempFlight.getDayOne() );
+
     }// while
-    
+    //println("Day One - Total Coordinates: "+activeCoordinates.size());
   }// addDayOne
   
   void addDayTwo(){
     Enumeration e = FLIGHTS.elements();
-    
+
     while( e.hasMoreElements() ){
       Flight tempFlight = (Flight)e.nextElement();
-      activeFlights.addAll( tempFlight.getDayOne() );
-      
+      activeCoordinates.addAll( tempFlight.getDayTwo() );
+
     }// while
-  }// addDayX
+    //println("Day Two - Total Coordinates: "+activeCoordinates.size());
+  }// addDayTwo
   
   void addDayThree(){
     Enumeration e = FLIGHTS.elements();
-    
+
     while( e.hasMoreElements() ){
       Flight tempFlight = (Flight)e.nextElement();
-      activeFlights.addAll( tempFlight.getDayThree() );
-      
+      activeCoordinates.addAll( tempFlight.getDayThree() );
+
     }// while
-  }// addDayX
+  }// addDayThree
   
   void addDayFour(){
     Enumeration e = FLIGHTS.elements();
-    
+
     while( e.hasMoreElements() ){
       Flight tempFlight = (Flight)e.nextElement();
-      activeFlights.addAll( tempFlight.getDayFour() );
-      
+      activeCoordinates.addAll( tempFlight.getDayFour() );
+
     }// while
-  }// addDayX
+  }// addDayFour
   
   void addDayFive(){
     Enumeration e = FLIGHTS.elements();
-    
+
     while( e.hasMoreElements() ){
       Flight tempFlight = (Flight)e.nextElement();
-      activeFlights.addAll( tempFlight.getDayFive() );
-      
+      activeCoordinates.addAll( tempFlight.getDayFive() );
+
     }// while
-  }// addDayX
+  }// addDayFive
   
   void addDaySix(){
     Enumeration e = FLIGHTS.elements();
-    
+
     while( e.hasMoreElements() ){
       Flight tempFlight = (Flight)e.nextElement();
-      activeFlights.addAll( tempFlight.getDaySix() );
-      
+      activeCoordinates.addAll( tempFlight.getDaySix() );
+
     }// while
-  }// addDayX
+  }// addDaySix
   
   void addDaySeven(){
     Enumeration e = FLIGHTS.elements();
-    
+
     while( e.hasMoreElements() ){
       Flight tempFlight = (Flight)e.nextElement();
-      activeFlights.addAll( tempFlight.getDaySeven() );
-      
+      activeCoordinates.addAll( tempFlight.getDaySeven() );
+
     }// while
-  }// addDayX
+  }// addDaySeven
   
   void addDayEight(){
     Enumeration e = FLIGHTS.elements();
-    
+
     while( e.hasMoreElements() ){
       Flight tempFlight = (Flight)e.nextElement();
-      activeFlights.addAll( tempFlight.getDayEight() );
-      
+      activeCoordinates.addAll( tempFlight.getDayEight() );
+
     }// while
-  }// addDayX
+  }// addDayEight
+  
 }// FlightManager
 
 class Flight{
@@ -401,13 +409,13 @@ class Flight{
   // [2] Bearing
   // [3] isDeparting
 
-  Flight(int ID, String name, String airlineName, float[] pos, int isDep){
+  Flight(int ID, int timestampID, String timestamp, String name, String airlineName, float[] pos, int isDep){
     flightID = ID;
     flightName = name;
     airline = airlineName;
     
     flightPositions = new ArrayList();
-    addPosition(pos);
+    addPosition(timestampID, timestamp, pos);
     
     switch(isDep){
       case(0):
@@ -423,8 +431,8 @@ class Flight{
     return departing;
   }// isDeparting
   
-  void addPosition( float[] pos ){
-    flightPositions.add( new Coords( new Location( pos[0], pos[1] ) , (int)pos[2] ) );
+  void addPosition( int tsID, String timestamp, float[] pos ){
+    flightPositions.add( new Coords( this, tsID, timestamp, new Location( pos[0], pos[1] ) , (int)pos[2] ) );
     
     //flightPositions.add( new Location( pos[0], pos[1] ) );
     //flightPositions.add( pos );
@@ -450,49 +458,98 @@ class Flight{
     return flightPositions;
   }// getFlightpath
   
-  ArrayList getFlightPath(int start, int end){
-    if( end >= flightPositions.size() )
-      end = flightPositions.size() - 1;
-    if( start >= flightPositions.size() )
-      start = flightPositions.size() - 1;
-      
+  ArrayList getCoords(int start, int end){
     ArrayList out = new ArrayList();
-    for( int i = start; i < end; i++ ){
-      out.add( flightPositions.get(i) );
+    
+    for( int i = 0; i < flightPositions.size(); i++ ){
+      Coords tempCoord = (Coords)flightPositions.get(i);
+ 
+      if( tempCoord.getTimestampID() >= start && tempCoord.getTimestampID() <= end )
+        out.add( flightPositions.get(i) );
     }
     return out;
+    
   }// getFlightpath
   
-  ArrayList getDayOne(){
-    return getFlightPath(0, 284);
+  // Returns an arraylist of all coords in this flight on day 1
+  ArrayList getDayOne(){ // 06-05-2009
+    ArrayList output = new ArrayList();
+    for( int i = 0; i < flightPositions.size(); i++ ){
+      Coords tempCoord = (Coords)flightPositions.get(i);
+      if( tempCoord.getDay() == 5 )
+        output.add( tempCoord );
+    }// for
+    return output;
   }// getDay1
-  
-  ArrayList getDayTwo(){
-    return getFlightPath(284, 570);
+
+  ArrayList getDayTwo(){ // 06-06-2009
+    ArrayList output = new ArrayList();
+    for( int i = 0; i < flightPositions.size(); i++ ){
+      Coords tempCoord = (Coords)flightPositions.get(i);
+      if( tempCoord.getDay() == 6 )
+        output.add( tempCoord );
+    }// for
+    return output;
   }// getDay2
   
-  ArrayList getDayThree(){
-    return getFlightPath(570,854);
+  ArrayList getDayThree(){ // 06-07-2009
+    ArrayList output = new ArrayList();
+    for( int i = 0; i < flightPositions.size(); i++ ){
+      Coords tempCoord = (Coords)flightPositions.get(i);
+      if( tempCoord.getDay() == 7 )
+        output.add( tempCoord );
+    }// for
+    return output;
   }// getDay3
   
-  ArrayList getDayFour(){
-    return getFlightPath(854,1139);
+  ArrayList getDayFour(){ // 06-08-2009
+    ArrayList output = new ArrayList();
+    for( int i = 0; i < flightPositions.size(); i++ ){
+      Coords tempCoord = (Coords)flightPositions.get(i);
+      if( tempCoord.getDay() == 8 )
+        output.add( tempCoord );
+    }// for
+    return output;
   }// getDay4
   
-  ArrayList getDayFive(){
-    return getFlightPath(1139,1417);
+  ArrayList getDayFive(){ // 06-09-2009
+    ArrayList output = new ArrayList();
+    for( int i = 0; i < flightPositions.size(); i++ ){
+      Coords tempCoord = (Coords)flightPositions.get(i);
+      if( tempCoord.getDay() == 9 )
+        output.add( tempCoord );
+    }// for
+    return output;
   }// getDay5
   
-  ArrayList getDaySix(){
-    return getFlightPath(1417,1703);
+  ArrayList getDaySix(){ // 06-10-2009
+    ArrayList output = new ArrayList();
+    for( int i = 0; i < flightPositions.size(); i++ ){
+      Coords tempCoord = (Coords)flightPositions.get(i);
+      if( tempCoord.getDay() == 10 )
+        output.add( tempCoord );
+    }// for
+    return output;
   }// getDay6
   
-  ArrayList getDaySeven(){
-    return getFlightPath(1703,1988);
+  ArrayList getDaySeven(){ // 06-11-2009
+    ArrayList output = new ArrayList();
+    for( int i = 0; i < flightPositions.size(); i++ ){
+      Coords tempCoord = (Coords)flightPositions.get(i);
+      if( tempCoord.getDay() == 11 )
+        output.add( tempCoord );
+    }// for
+    return output;
   }// getDay7
   
-  ArrayList getDayEight(){
-    return getFlightPath(1988,flightPositions.size());
+  ArrayList getDayEight(){ // 06-12-2009
+    ArrayList output = new ArrayList();
+    for( int i = 0; i < flightPositions.size(); i++ ){
+      Coords tempCoord = (Coords)flightPositions.get(i);
+      if( tempCoord.getDay() == 12 )
+        output.add( tempCoord );
+    }// for
+    return output;
   }// getDay8
   
   String getAirline(){
@@ -513,10 +570,25 @@ class Flight{
 class Coords{
   Location location;
   int bearing;
+  Flight p;
+  String timestamp;
+  int MONTH, DAY, YEAR, HOUR, MINUTE;
+  int timestampID;
   
-  Coords( Location l, int b ){
+  Coords( Flight parent, int tsID, String time, Location l, int b ){
     location = l;
     bearing = b;
+    p = parent;
+    timestamp = time;
+    timestampID = tsID;
+    
+    //MM-DD-YYYY-HH-MM
+    
+    MONTH = Integer.valueOf( timestamp.substring(0,2) );
+    DAY = Integer.valueOf( timestamp.substring(3,5) );
+    YEAR = Integer.valueOf( timestamp.substring(6,10) );
+    HOUR = Integer.valueOf( timestamp.substring(11,13) );
+    MINUTE = Integer.valueOf( timestamp.substring(14,16) );
   }// CTOR
   
   Location getLocation(){
@@ -526,4 +598,20 @@ class Coords{
   int getBearing(){
      return bearing;
   }// getBearing
+  
+  Flight getFlight(){
+    return p;
+  }// getFlight
+  
+  int getDay(){
+    return DAY;
+  }// getDay
+  
+  String getTimestamp(){
+    return timestamp;
+  }// getTimestamp
+  
+  int getTimestampID(){
+    return timestampID;
+  }// getTimestampID
 }// coords
