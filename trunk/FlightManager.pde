@@ -193,7 +193,8 @@ class FlightManager{
         //Point2f p = map.locationPoint( new Location((float)pos[0], (float)pos[1]) );
         //println(tempCoords.id + " " + tempCoords.flight + " " + tempCoords.airline + " " + tempCoords.lat + " " + tempCoords.lon + " " + tempCoords.bearing + " " + tempCoords.isDep);
         //161668415 works
-        if(tempFlight.getAirline().equals(airlineList.get(selectedAirline))){
+        for( int j = 0; j < selectedAirlines.size(); j++ )
+        if( ( (String)selectedAirlines.get(j) ).contains(tempFlight.getAirline()) ){
           vbuffer.put(p.x);
           vbuffer.put(p.y);
           

@@ -8,7 +8,7 @@ class SlidePane{
   boolean showing = false;
   ArrayList activeAirlines;
   ArrayList airlineButtons;
-  int nButtons = 8;
+  int nButtons = 71;
   
   ArrayList colorPallet;
   
@@ -35,17 +35,27 @@ class SlidePane{
     
     //activeAirlines.add( (String)FM.airlineList.get(0) );
     
+    int row = 0;
+    int column = 0;
     // Generate airline buttons based on airline list
     for( int i = 0; i < FM.airlineList.size(); i++ ){
       if( i >= nButtons )
         break;
       String name = (String)FM.airlineList.get(i);
       
-      MTButton temp = new MTButton( parent, xPos - width/2 + 105 + 210*i , yPos - paneHeight/2 + 20, 200, 20 );
+      if( xPos - width/2 + 105 + 210*column < width ){
+        
+        column++;
+      } else {
+        column = 0;
+        row++;
+      }
+      MTButton temp = new MTButton( parent, xPos - width/2 + 105 + 210*column , yPos - paneHeight/2 + 20*row, 200, 20 );
       temp.setButtonText(name);
       temp.setButtonTextColor(color(255,255,255));
       temp.setLitColor(color(5,75,75));
       temp.setDoubleSidedText(false);
+      temp.setButtonTextSize(12);
       airlineButtons.add( temp );
     }// for
     
@@ -157,11 +167,20 @@ class SlidePane{
     noStroke();
     rect( xPos, yPos, paneWidth, paneHeight );
     
+    int column = -1;
+    int row = 0;
     // Airline buttons
     for( int i = 0; i < airlineButtons.size(); i++ ){
       if( i >= nButtons )
         break;
-      ((MTButton)airlineButtons.get(i)).setPosition(xPos - width/2 + 105 + 210*i , yPos - paneHeight/2 + 35);
+      if( xPos - width/2 + 105 + 210*column < width - 200 ){
+        column++;
+      } else {
+        column = 0;
+        row++;
+      }
+
+      ((MTButton)airlineButtons.get(i)).setPosition( xPos - width/2 + 105 + 210*column , yPos - paneHeight/2 + 40 + 25*row );
       ((MTButton)airlineButtons.get(i)).process();
     }// for
     
