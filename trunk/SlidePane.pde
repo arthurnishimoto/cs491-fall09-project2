@@ -1,6 +1,3 @@
-
-
-color[] selectedAirlineColors;
 ArrayList airlineButtons;
 
 class SlidePane{
@@ -8,6 +5,7 @@ class SlidePane{
   float paneWidth, paneHeight;
   boolean showing = false;
   ArrayList activeAirlines;
+  
   
   int nButtons = 71;
   
@@ -32,7 +30,6 @@ class SlidePane{
     airlineButtons = new ArrayList();
     colorPallet = new ArrayList();
     activeAirlines = new ArrayList();
-    selectedAirlineColors = new color[100];
     
     //activeAirlines.add( (String)FM.airlineList.get(0) );
     
@@ -143,12 +140,13 @@ class SlidePane{
     if( showing ){
       if( yPos > height - paneHeight/2 )
         yPos -= 10;
-      airlineSelector_button.setButtonText("<");
+      airlineSelector_button.setButtonText("^");
+      airlineSelector_button.setRotation(radians(180));
     }// if showing
     else {
       if( yPos < height + paneHeight/2 )
         yPos += 10;
-      airlineSelector_button.setButtonText(">");
+      airlineSelector_button.setRotation(radians(0));
     }// else 
     
     // Display pane 

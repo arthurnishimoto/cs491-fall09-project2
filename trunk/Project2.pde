@@ -77,6 +77,8 @@ SlidePane airlineSelector;
 float paneHeight = 350;
 MTButton airlineSelector_button;
 
+MTButton mapButton, aerialButton, hybridButton;
+
 PApplet parent;
 
 void setup() {
@@ -89,6 +91,21 @@ void setup() {
   minDate = new MTScrollBar(this, 50, 80, 840, 20);
   maxDate = new MTScrollBar(this, 50, 120, 840, 20);
   
+  mapButton = new MTButton(this, width - 310, 30, 100 , 25);
+  mapButton.setIdleColor(color(178,178,178));
+  mapButton.setButtonText("Road Map");
+  mapButton.setDoubleSidedText(false);
+  
+  aerialButton = new MTButton(this, width - 200, 30, 100 , 25);
+  aerialButton.setIdleColor(color(178,178,178));
+  aerialButton.setButtonText("Aerial Map");
+  aerialButton.setDoubleSidedText(false);
+  
+  hybridButton = new MTButton(this, width - 90, 30, 100 , 25);
+  hybridButton.setIdleColor(color(178,178,178));
+  hybridButton.setButtonText("Hybrid Map");
+  hybridButton.setDoubleSidedText(false);
+  
   loaded = false;
   Runnable loader = new Runnable( ) {
     public void run( ) {
@@ -97,12 +114,11 @@ void setup() {
       
       airlineSelector = new SlidePane( width/2, height - paneHeight/2, width, paneHeight );
       
-      airlineSelector_button = new MTButton(parent, width/2, height - 10, 20 , 100);
+      airlineSelector_button = new MTButton(parent, width/2, height - 10, 100 , 20);
       airlineSelector_button.setIdleColor(color(178,178,178));
-      airlineSelector_button.setButtonText(">");
-      airlineSelector_button.setRotation(radians(-90));
+      airlineSelector_button.setButtonText("^");
       airlineSelector_button.setDoubleSidedText(false);
-      
+      airlineSelector_button.setRotation(radians(180));
       loaded = true;
     }
   };
@@ -427,6 +443,41 @@ void draw() {
   week[6].setLit( day7 );
   week[7].setLit( day8 );
   
+  if( MAP_STATE == ROAD )
+    mapButton.setLit(true);
+  else
+    mapButton.setLit(false);
+    
+  if( MAP_STATE == AERIAL )
+    aerialButton.setLit(true);
+  else
+    aerialButton.setLit(false);
+    
+  if( MAP_STATE == HYBRID )
+    hybridButton.setLit(true);
+  else
+    hybridButton.setLit(false);
+    
+  mapButton.process();
+  aerialButton.process();
+  hybridButton.process();
+  
+  // Airline selector button mouse over
+  if(loaded)
+  if( airlineSelector_button.isButtonHit(mouseX,mouseY) ){
+    fill(220,220,220,190);
+    noStroke();
+    rect( mouseX - 160, mouseY - 16, 170, 20 );
+    
+    fill(0,0,0);
+    textFont(font,16);
+    textAlign(RIGHT);
+    if(airlineSelector.showing)
+      text("Hide Airline Selector", mouseX, mouseY);
+    else
+      text("Show Airline Selector", mouseX, mouseY);
+    textAlign(LEFT);
+  }
   
 }// draw
 
@@ -437,11 +488,25 @@ void mousePressed(){
  
   if( mouseButton == CENTER )
     println("Mouse at ["+(map.pointLocation(mouseX, mouseY))+"]");
-  
+
+  if( mapButton.isButtonHit(mouseX, mouseY) ){
+    if( MAP_STATE != ROAD )
+      switchToRoadMap();
+  }
+  if( aerialButton.isButtonHit(mouseX, mouseY) ){
+    if( MAP_STATE != AERIAL )
+      switchToAerialMap();
+  }
+  if( hybridButton.isButtonHit(mouseX, mouseY) ){
+    if( MAP_STATE != HYBRID )
+      switchToHybridMap();
+  }
+
   if(!loaded)
     return;
   
   boolean changed = false;
+  
   if( week[0].isButtonHit(mouseX, mouseY) ){
     disableSlider = true;
     day1 = !day1;
